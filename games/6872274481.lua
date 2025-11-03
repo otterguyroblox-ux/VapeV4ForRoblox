@@ -8490,4 +8490,593 @@ run(function()
 		List = WinEffectName
 	})
 end)
+							-- notes are for retardes who dont understand
+run(function()
+    local HotbarVisuals: table = {}
+    local HotbarRounding: table  = {}
+    local HotbarHighlight: table  = {}
+    local HotbarColorToggle: table  = {}
+    local HotbarHideSlotIcons: table  = {}
+    local HotbarSlotNumberColorToggle: table  = {}
+    local HotbarSpacing: table  = {Value = 0}
+    local HotbarInvisibility: table  = {Value = 4}
+    local HotbarRoundRadius: table  = {Value = 8}
+    local HotbarColor: table  = {}
+    local HotbarHighlightColor: table  = {}
+    local HotbarSlotNumberColor: table  = {}
+    
+   
+    local HotbarAnimateSlots: table = {}
+    local HotbarRainbow: table = {}
+    local HotbarRainbowSpeed: table = {Value = 1}
+    local HotbarGlow: table = {}
+    local HotbarGlowColor: table = {}
+    local HotbarScale: table = {Value = 1}
+    local HotbarRotation: table = {Value = 0}
+    local HotbarPulse: table = {}
+    local HotbarPulseSpeed: table = {Value = 1}
+    local HotbarShadow: table = {}
+    local HotbarShadowColor: table = {}
+    local HotbarBorderThickness: table = {Value = 2}
+    local HotbarBorderRainbow: table = {}
+    local HotbarTilt: table = {}
+    local HotbarTiltAngle: table = {Value = 5}
+    local HotbarNeon: table = {}
+    local HotbarWave: table = {}
+    local HotbarWaveSpeed: table = {Value = 1}
+    
+    local hotbarcoloricons: table  = {}
+    local hotbarsloticons: table  = {}
+    local hotbarobjects: table  = {}
+    local hotbarslotgradients: table  = {}
+    local hotbarglowobjects: table = {}
+    local hotbarshadowobjects: table = {}
+    local hotbarneonobjects: table = {}
+    local inventoryiconobj: any = nil
+    local rainbowTick: number = 0
+    local pulseTick: number = 0
+    local waveTick: number = 0
+    
+    local function createGlow(parent: GuiObject)
+        local glow = Instance.new("ImageLabel")
+        glow.Name = "Glow"
+        glow.BackgroundTransparency = 1
+        glow.Image = "rbxasset://textures/ui/Glow.png"
+        glow.ImageColor3 = Color3.fromHSV(HotbarGlowColor.Hue, HotbarGlowColor.Sat, HotbarGlowColor.Value)
+        glow.ImageTransparency = 0.3
+        glow.Size = UDim2.new(1.5, 0, 1.5, 0)
+        glow.Position = UDim2.new(-0.25, 0, -0.25, 0)
+        glow.ZIndex = parent.ZIndex - 1
+        glow.Parent = parent
+        return glow
+    end
+    
+    local function createShadow(parent: GuiObject)
+        local shadow = Instance.new("ImageLabel")
+        shadow.Name = "Shadow"
+        shadow.BackgroundTransparency = 1
+        shadow.Image = "rbxasset://textures/ui/Glow.png" -- idk if it will work 
+        shadow.ImageColor3 = Color3.fromHSV(HotbarShadowColor.Hue, HotbarShadowColor.Sat, HotbarShadowColor.Value)
+        shadow.ImageTransparency = 0.5
+        shadow.Size = UDim2.new(1.2, 0, 1.2, 0)
+        shadow.Position = UDim2.new(-0.1, 3, -0.1, 3)
+        shadow.ZIndex = parent.ZIndex - 2
+        shadow.Parent = parent
+        return shadow
+    end
+    
+    local function createNeonBorder(parent: GuiObject)
+        -- weee
+        local outerGlow = Instance.new("UIStroke")
+        outerGlow.Name = "NeonOuter"
+        outerGlow.Color = Color3.fromHSV(HotbarColor.Hue, HotbarColor.Sat, HotbarColor.Value)
+        outerGlow.Thickness = HotbarBorderThickness.Value * 2
+        outerGlow.Transparency = 0.5
+        outerGlow.Parent = parent
+        
+        -- your still here 
+        local innerGlow = Instance.new("UIStroke")
+        innerGlow.Name = "NeonInner"
+        innerGlow.Color = Color3.fromRGB(255, 255, 255)
+        innerGlow.Thickness = HotbarBorderThickness.Value
+        innerGlow.Transparency = 0
+        innerGlow.Parent = parent
+        
+        return {outerGlow, innerGlow}
+    end
+    
+    local function hotbarFunction(): (any, any)
+        local icons: any = ({pcall(function() return lplr.PlayerGui.hotbar["1"].ItemsHotbar end)})[2];
+        if not (icons and typeof(icons) == "Instance") then return end;
+        inventoryiconobj = icons;
+        pcall(function()
+            local layout: UIListLayout? = icons:FindFirstChildOfClass("UIListLayout");
+            if layout then layout.Padding = UDim.new(0, HotbarSpacing.Value); end
+        end);
+        
+        for i, v: Instance in pairs(icons:GetChildren()) do
+            local sloticon: TextLabel? = ({pcall(function() return v:FindFirstChildWhichIsA("ImageButton"):FindFirstChildWhichIsA("TextLabel") end)})[2];
+            if typeof(sloticon) ~= "Instance" then continue end;
+            local parent: GuiObject = sloticon.Parent;
+            table.insert(hotbarcoloricons, parent);
+            sloticon.Parent.Transparency = 0.1 * HotbarInvisibility.Value;
+            
+            -- ajax i miss you 
+            if not parent:GetAttribute("OriginalSizeX") then
+                parent:SetAttribute("OriginalSizeX", parent.Size.X.Scale)
+                parent:SetAttribute("OriginalSizeY", parent.Size.Y.Scale)
+                parent:SetAttribute("OriginalRotation", parent.Rotation)
+                parent:SetAttribute("OriginalPosX", parent.Position.X.Scale)
+                parent:SetAttribute("OriginalPosY", parent.Position.Y.Scale)
+            end
+            
+            -- roate we go speed
+            if HotbarRotation.Value ~= 0 then
+                parent.Rotation = HotbarRotation.Value
+            end
+            
+            if HotbarColorToggle.Enabled and not HotbarVisualsGradient.Enabled then
+                parent.BackgroundColor3 = Color3.fromHSV(HotbarColor.Hue, HotbarColor.Sat, HotbarColor.Value);
+            elseif HotbarVisualsGradient.Enabled and not parent:FindFirstChildWhichIsA("UIGradient") then
+                parent.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+                local g: UIGradient = Instance.new("UIGradient");
+                g.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromHSV(HotbarVisualsGradientColor.Hue, HotbarVisualsGradientColor.Sat, HotbarVisualsGradientColor.Value)),
+                    ColorSequenceKeypoint.new(1, Color3.fromHSV(HotbarVisualsGradientColor2.Hue, HotbarVisualsGradientColor2.Sat, HotbarVisualsGradientColor2.Value))
+                });
+                g.Parent = parent;
+                table.insert(hotbarslotgradients, g);
+            end;
+            
+            if HotbarRounding.Enabled then
+                local r: UICorner = Instance.new("UICorner"); r.CornerRadius = UDim.new(0, HotbarRoundRadius.Value);
+                r.Parent = parent; table.insert(hotbarobjects, r);
+            end;
+            
+            -- Glow effect
+            if HotbarGlow.Enabled then
+                local glow = createGlow(parent)
+                table.insert(hotbarglowobjects, glow)
+            end
+            
+            -- Shadow effect
+            if HotbarShadow.Enabled then
+                local shadow = createShadow(parent)
+                table.insert(hotbarshadowobjects, shadow)
+            end
+            
+            -- Neon border effect
+            if HotbarNeon.Enabled then
+                local neonParts = createNeonBorder(parent)
+                for _, part in neonParts do
+                    table.insert(hotbarneonobjects, part)
+                end
+            end
+            
+            -- Enhanced border with custom thickness :fire:
+            if HotbarHighlight.Enabled then
+                local hl: UIStroke = Instance.new("UIStroke");
+                hl.Color = Color3.fromHSV(HotbarHighlightColor.Hue, HotbarHighlightColor.Sat, HotbarHighlightColor.Value);
+                hl.Thickness = HotbarBorderThickness.Value; 
+                hl.Parent = parent;
+                table.insert(hotbarobjects, hl);
+            end
+            
+            -- Slot animation
+            if HotbarAnimateSlots.Enabled then
+                task.spawn(function()
+                    local originalPos = parent.Position
+                    while parent and parent.Parent and HotbarAnimateSlots.Enabled do
+                        parent:TweenPosition(
+                            UDim2.new(originalPos.X.Scale, originalPos.X.Offset, originalPos.Y.Scale, originalPos.Y.Offset - 5),
+                            Enum.EasingDirection.InOut,
+                            Enum.EasingStyle.Sine,
+                            0.5,
+                            true
+                        )
+                        wait(0.5)
+                        parent:TweenPosition(originalPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, 0.5, true)
+                        wait(0.5)
+                    end
+                end)
+            end
+            
+            if HotbarHideSlotIcons.Enabled then sloticon.Visible = false; end;
+            table.insert(hotbarsloticons, sloticon);
+        end;
+    end;
+    
+    HotbarVisuals = vape.Categories.Render:CreateModule({
+        ["Name"] = 'HotbarVisuals',
+        ["HoverText"] = 'Add advanced customization to your hotbar.',
+        ["Function"] = function(callback: boolean): void
+            if callback then 
+                task.spawn(function()
+                    table.insert(HotbarVisuals.Connections, lplr.PlayerGui.DescendantAdded:Connect(function(v)
+                        if v.Name == "hotbar" then hotbarFunction(); end
+                    end));
+                    hotbarFunction();
+                end);
+                
+                -- Rainbow effect loop
+                table.insert(HotbarVisuals.Connections, runService.RenderStepped:Connect(function(dt)
+                    for _, v in hotbarcoloricons do 
+                        pcall(function() v.Transparency = 0.1 * HotbarInvisibility["Value"]; end); 
+                    end
+                    
+                    if HotbarRainbow.Enabled then
+                        rainbowTick = rainbowTick + (dt * HotbarRainbowSpeed.Value)
+                        if rainbowTick >= 1 then rainbowTick = 0 end
+                        
+                        for i, v in hotbarcoloricons do
+                            pcall(function()
+                                local offset = (i - 1) * 0.1
+                                local hue = (rainbowTick + offset) % 1
+                                v.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+                            end)
+                        end
+                    end
+                    
+                    -- Rainbow border effect
+                    if HotbarBorderRainbow.Enabled then
+                        rainbowTick = rainbowTick + (dt * HotbarRainbowSpeed.Value)
+                        if rainbowTick >= 1 then rainbowTick = 0 end
+                        
+                        for i, v in hotbarobjects do
+                            if v:IsA("UIStroke") then
+                                pcall(function()
+                                    local offset = (i - 1) * 0.1
+                                    local hue = (rainbowTick + offset) % 1
+                                    v.Color = Color3.fromHSV(hue, 1, 1)
+                                end)
+                            end
+                        end
+                    end
+                    
+                    -- Pulse effect
+                    if HotbarPulse.Enabled then
+                        pulseTick = pulseTick + (dt * HotbarPulseSpeed.Value)
+                        local scale = 1 + (math.sin(pulseTick * math.pi * 2) * 0.1)
+                        
+                        for i, v in hotbarcoloricons do
+                            pcall(function()
+                                local origX = v:GetAttribute("OriginalSizeX") or 0.1
+                                local origY = v:GetAttribute("OriginalSizeY") or 0.1
+                                v.Size = UDim2.new(origX * scale, 0, origY * scale, 0)
+                            end)
+                        end
+                    end
+                    
+                    -- Wave effect
+                    if HotbarWave.Enabled then
+                        waveTick = waveTick + (dt * HotbarWaveSpeed.Value)
+                        
+                        for i, v in hotbarcoloricons do
+                            pcall(function()
+                                local origY = v:GetAttribute("OriginalPosY") or 0
+                                local wave = math.sin((waveTick + i * 0.5) * math.pi * 2) * 0.02
+                                v.Position = UDim2.new(v.Position.X.Scale, v.Position.X.Offset, origY + wave, v.Position.Y.Offset)
+                            end)
+                        end
+                    end
+                    
+                    -- Tilt animation
+                    if HotbarTilt.Enabled then
+                        for i, v in hotbarcoloricons do
+                            pcall(function()
+                                local tilt = math.sin((tick() + i * 0.2) * 2) * HotbarTiltAngle.Value
+                                v.Rotation = tilt
+                            end)
+                        end
+                    end
+                end));
+            else
+                for _: any, v: any in hotbarsloticons do pcall(function() v.Visible = true; end); end
+                for _: any, v: any in hotbarcoloricons do 
+                    pcall(function() 
+                        v.BackgroundColor3 = Color3.fromRGB(29, 36, 46);
+                        v.BackgroundTransparency = 0
+                        v.Rotation = v:GetAttribute("OriginalRotation") or 0
+                        -- notes 
+                        local origX = v:GetAttribute("OriginalSizeX") or 0
+                        local origY = v:GetAttribute("OriginalSizeY") or 0
+                        if origX ~= 0 and origY ~= 0 then
+                            v.Size = UDim2.new(origX, 0, origY, 0)
+                        end
+                    end); 
+                end
+                for _: any, v: any in hotbarobjects do pcall(function() v:Destroy(); end); end
+                for _: any, v: any in hotbarslotgradients do pcall(function() v:Destroy(); end); end
+                for _: any, v: any in hotbarglowobjects do pcall(function() v:Destroy(); end); end
+                for _: any, v: any in hotbarshadowobjects do pcall(function() v:Destroy(); end); end
+                for _: any, v: any in hotbarneonobjects do pcall(function() v:Destroy(); end); end
+                table.clear(hotbarobjects); table.clear(hotbarsloticons); table.clear(hotbarcoloricons);
+                table.clear(hotbarglowobjects); table.clear(hotbarshadowobjects); table.clear(hotbarneonobjects);
+            end;
+        end;
+    })
+    
+    local function forceRefresh()
+        if HotbarVisuals["Enabled"] then HotbarVisuals:Toggle(); HotbarVisuals:Toggle(); end;
+    end;
+    
+    -- nigga is for sale
+    HotbarColorToggle = HotbarVisuals:CreateToggle({
+        ["Name"] = "Slot Color",
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarColor.Object.Visible = callback; end); 
+            forceRefresh(); 
+        end
+    });
+    
+    HotbarVisualsGradient = HotbarVisuals:CreateToggle({
+        ["Name"] = "Gradient Slot Color",
+        ["Function"] = function(callback: boolean): void
+            pcall(function()
+                HotbarVisualsGradientColor.Object.Visible = callback;
+                HotbarVisualsGradientColor2.Object.Visible = callback;
+            end);
+            forceRefresh();
+        end;
+    });
+    
+    HotbarVisualsGradientColor = HotbarVisuals:CreateColorSlider({
+        ["Name"] = 'Gradient Color',
+        ["Function"] = function(h, s, v)
+            for i: any, v: any in hotbarslotgradients do 
+                pcall(function() v.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromHSV(HotbarVisualsGradientColor.Hue, HotbarVisualsGradientColor.Sat, HotbarVisualsGradientColor.Value)), ColorSequenceKeypoint.new(1, Color3.fromHSV(HotbarVisualsGradientColor2.Hue, HotbarVisualsGradientColor2.Sat, HotbarVisualsGradientColor2.Value))}) end)
+            end;
+        end;
+    })
+    
+    HotbarVisualsGradientColor2 = HotbarVisuals:CreateColorSlider({
+        ["Name"] = 'Gradient Color 2',
+        ["Function"] = function(h, s, v)
+            for i: any,v: any in hotbarslotgradients do 
+                pcall(function() v.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromHSV(HotbarVisualsGradientColor.Hue, HotbarVisualsGradientColor.Sat, HotbarVisualsGradientColor.Value)), ColorSequenceKeypoint.new(1, Color3.fromHSV(HotbarVisualsGradientColor2.Hue, HotbarVisualsGradientColor2.Sat, HotbarVisualsGradientColor2.Value))}) end)
+            end;
+        end;
+    })
+    
+    HotbarColor = HotbarVisuals:CreateColorSlider({
+        ["Name"] = 'Slot Color',
+        ["Function"] = function(h, s, v)
+            for i: any,v: any in hotbarcoloricons do
+                if HotbarColorToggle["Enabled"] and not HotbarRainbow.Enabled then
+                    pcall(function() 
+                        v.BackgroundColor3 = Color3.fromHSV(HotbarColor.Hue, HotbarColor.Sat, HotbarColor.Value)
+                    end) 
+                end;
+            end;
+        end;
+    })
+    
+    HotbarRounding = HotbarVisuals:CreateToggle({
+        ["Name"] = 'Rounding',
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarRoundRadius.Object.Visible = callback; end); 
+            forceRefresh(); 
+        end
+    })
+    
+    HotbarRoundRadius = HotbarVisuals:CreateSlider({
+        ["Name"] = 'Corner Radius',
+        ["Min"] = 1,
+        ["Max"] = 20,
+        ["Function"] = function(callback: boolean): void
+            for i,v in hotbarobjects do 
+                pcall(function() 
+                    if v:IsA("UICorner") then
+                        v.CornerRadius = UDim.new(0, callback) 
+                    end
+                end);
+            end;
+        end;
+    })
+    
+    HotbarHighlight = HotbarVisuals:CreateToggle({
+        ["Name"] = 'Outline Highlight',
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarHighlightColor.Object.Visible = callback; end); 
+            forceRefresh(); 
+        end
+    })
+    
+    HotbarHighlightColor = HotbarVisuals:CreateColorSlider({
+        ["Name"] = 'Highlight Color',
+        ["Function"] = function(h, s, v)
+            for i,v in hotbarobjects do 
+                if v:IsA('UIStroke') and HotbarHighlight.Enabled then 
+                    pcall(function() v.Color = Color3.fromHSV(HotbarHighlightColor.Hue, HotbarHighlightColor.Sat, HotbarHighlightColor.Value) end)
+                end;
+            end;
+        end;
+    })
+    
+    -- NEW FEATURES
+    
+    HotbarRainbow = HotbarVisuals:CreateToggle({
+        ["Name"] = "Rainbow Mode",
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarRainbowSpeed.Object.Visible = callback; end); 
+        end
+    })
+    
+    HotbarRainbowSpeed = HotbarVisuals:CreateSlider({
+        ["Name"] = "Rainbow Speed",
+        ["Min"] = 1,
+        ["Max"] = 10,
+        ["Default"] = 1,
+        ["Function"] = function() end
+    })
+    
+    HotbarBorderRainbow = HotbarVisuals:CreateToggle({
+        ["Name"] = "Rainbow Border",
+        ["Function"] = function() end
+    })
+    
+    HotbarAnimateSlots = HotbarVisuals:CreateToggle({
+        ["Name"] = "Floating Animation",
+        ["Function"] = forceRefresh
+    })
+    
+    HotbarWave = HotbarVisuals:CreateToggle({
+        ["Name"] = "Wave Effect",
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarWaveSpeed.Object.Visible = callback; end); 
+        end
+    })
+    
+    HotbarWaveSpeed = HotbarVisuals:CreateSlider({
+        ["Name"] = "Wave Speed",
+        ["Min"] = 1,
+        ["Max"] = 10,
+        ["Default"] = 1,
+        ["Function"] = function() end
+    })
+    
+    HotbarPulse = HotbarVisuals:CreateToggle({
+        ["Name"] = "Pulse Effect",
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarPulseSpeed.Object.Visible = callback; end); 
+        end
+    })
+    
+    HotbarPulseSpeed = HotbarVisuals:CreateSlider({
+        ["Name"] = "Pulse Speed",
+        ["Min"] = 1,
+        ["Max"] = 10,
+        ["Default"] = 1,
+        ["Function"] = function() end
+    })
+    
+    HotbarTilt = HotbarVisuals:CreateToggle({
+        ["Name"] = "Tilt Animation",
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarTiltAngle.Object.Visible = callback; end); 
+        end
+    })
+    
+    HotbarTiltAngle = HotbarVisuals:CreateSlider({
+        ["Name"] = "Tilt Angle",
+        ["Min"] = 1,
+        ["Max"] = 15,
+        ["Default"] = 5,
+        ["Function"] = function() end
+    })
+    
+    HotbarNeon = HotbarVisuals:CreateToggle({
+        ["Name"] = "Neon Glow Border",
+        ["Function"] = forceRefresh
+    })
+    
+    HotbarGlow = HotbarVisuals:CreateToggle({
+        ["Name"] = "Glow Effect",
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarGlowColor.Object.Visible = callback; end); 
+            forceRefresh(); 
+        end
+    })
+    
+    HotbarGlowColor = HotbarVisuals:CreateColorSlider({
+        ["Name"] = "Glow Color",
+        ["Function"] = function(h, s, v)
+            for i,v in hotbarglowobjects do 
+                pcall(function() v.ImageColor3 = Color3.fromHSV(HotbarGlowColor.Hue, HotbarGlowColor.Sat, HotbarGlowColor.Value) end)
+            end;
+        end;
+    })
+    
+    HotbarShadow = HotbarVisuals:CreateToggle({
+        ["Name"] = "Shadow Effect",
+        ["Function"] = function(callback: boolean): void 
+            pcall(function() HotbarShadowColor.Object.Visible = callback; end); 
+            forceRefresh(); 
+        end
+    })
+    
+    HotbarShadowColor = HotbarVisuals:CreateColorSlider({
+        ["Name"] = "Shadow Color",
+        ["Function"] = function(h, s, v)
+            for i,v in hotbarshadowobjects do 
+                pcall(function() v.ImageColor3 = Color3.fromHSV(HotbarShadowColor.Hue, HotbarShadowColor.Sat, HotbarShadowColor.Value) end)
+            end;
+        end;
+    })
+    
+    HotbarBorderThickness = HotbarVisuals:CreateSlider({
+        ["Name"] = "Border Thickness",
+        ["Min"] = 1,
+        ["Max"] = 10,
+        ["Default"] = 2,
+        ["Function"] = function(value)
+            for i,v in hotbarobjects do 
+                if v:IsA("UIStroke") then
+                    pcall(function() v.Thickness = value end);
+                end
+            end;
+        end;
+    })
+    
+    HotbarScale = HotbarVisuals:CreateSlider({
+        ["Name"] = "Slot Scale",
+        ["Min"] = 0.5,
+        ["Max"] = 2,
+        ["Default"] = 1,
+        ["Decimal"] = 10,
+        ["Function"] = forceRefresh
+    })
+    
+    HotbarRotation = HotbarVisuals:CreateSlider({
+        ["Name"] = "Slot Rotation",
+        ["Min"] = 0,
+        ["Max"] = 360,
+        ["Function"] = function(value)
+            for i,v in hotbarcoloricons do 
+                pcall(function() 
+                    v.Rotation = value
+                end);
+            end;
+        end;
+    })
+    
+    HotbarHideSlotIcons = HotbarVisuals:CreateToggle({
+        ["Name"] = "No Slot Numbers", 
+        ["Function"] = forceRefresh
+    });
+    
+    HotbarInvisibility = HotbarVisuals:CreateSlider({
+        ["Name"] = 'Invisibility',
+        ["Min"] = 0,
+        ["Max"] = 10,
+        ["Default"] = 4,
+        ["Function"] = function(value)
+            for i,v in hotbarcoloricons do 
+                pcall(function() v.Transparency = (0.1 * value) end); 
+            end;
+        end;
+    })
+    
+    HotbarSpacing = HotbarVisuals:CreateSlider({
+        ["Name"] = 'Spacing',
+        ["Min"] = 0,
+        ["Max"] = 5,
+        ["Function"] = function(value)
+            if HotbarVisuals["Enabled"] then 
+                pcall(function() inventoryiconobj:FindFirstChildOfClass('UIListLayout').Padding = UDim.new(0, value) end);
+            end;
+        end;
+    })
+    
+  
+    HotbarColor.Object.Visible = false;
+    HotbarRoundRadius.Object.Visible = false;
+    HotbarHighlightColor.Object.Visible = false;
+    HotbarRainbowSpeed.Object.Visible = false;
+    HotbarPulseSpeed.Object.Visible = false;
+    HotbarGlowColor.Object.Visible = false;
+    HotbarShadowColor.Object.Visible = false;
+    HotbarWaveSpeed.Object.Visible = false;
+    HotbarTiltAngle.Object.Visible = false;
+end);
 	
